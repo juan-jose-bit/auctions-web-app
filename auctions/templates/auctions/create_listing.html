@@ -1,0 +1,27 @@
+{% extends "auctions/layout.html" %}
+{% block body %}
+    <h1>Create your listing!</h1>
+    {% if request.user.is_authenticated %}
+        <form action = "{% url 'listing' %} " method = "post">
+            {% csrf_token %}
+            <div class = "form-group">
+                {{form.title}}
+            </div>
+            <div class = "form-group">
+                {{form.description}}
+            </div>
+            <div class = "form-group">
+                {{form.price}}
+            </div>
+            <div class = "form-group">
+                {{form.photo}}
+            </div>
+            <div class = "form-group">
+                {{form.category}}
+            </div>
+            <button class = "btn btn-primary" type = "submit">Submit</button>
+        </form>
+    {% else %}
+        <h2>First login please</h2>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,17 @@
+body {
+    margin-left: 2%;
+    margin-right: 5%;
+}
+
+
+#img-container{
+    margin-bottom: 10%;
+    border-radius: 2%;
+    border-style: solid;
+    border-width: thin;
+}
+
+#description{
+    margin-right: 1%;
+}
+
