@@ -15,6 +15,7 @@ class Listing(models.Model):
     photo = models.URLField(blank=True)
     category = models.CharField(max_length=20,blank=True)
     active = models.BooleanField(default = True)
+    winner = models.ForeignKey(User, on_delete=models.CASCADE, null = True)
 
 class Bid(models.Model):
     id = models.AutoField(primary_key=True)
@@ -27,6 +28,7 @@ class Watchlist(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     listing = models.OneToOneField(Listing, on_delete=models.CASCADE)
+
 
 class Comments(models.Model):
     id = models.AutoField(primary_key=True)

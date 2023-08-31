@@ -132,13 +132,14 @@ def create_listing(request):
 def listing_view(request,item):
     if  not Listing.objects.filter(pk=item).exists():
         return render(request, "auctions/item_not_found.html", context = {"item":item})
-
+    
     # Retreave listing from db table
     lis = Listing.objects.get(pk = item)
     # Retreave the current highest bid for the current listing
     curr_bid = Bid.objects.filter(listing = lis, active = True).order_by('-bid_amount').first()
     if request.user.is_authenticated:
         usr = User.objects.get(pk = request.user.pk)
+        is_owner = usr.pk == lis.user.pk
         # item is in the watchlist?
         in_watchlist = Watchlist.objects.filter(user =usr,listing = lis)
         if request.method == "POST" and "place-bid-btn" in request.POST:
@@ -184,17 +185,21 @@ def listing_view(request,item):
             else:
                 return HttpResponseRedirect(reverse("item",kwargs={"item":item}))
         # if the user is authenticated but no post request
+
+        elif request.method == "POST" and "close-bid-btn" in request.POST and is_owner:
+            lis.active = False
+            lis.winner = curr_bid.bidder
         else:
             bid_form = BidForm()
-            if usr.pk == lis.user.pk:
+            if is_owner:
                 return render(request,"auctions/item.html",context = {"bid_form":bid_form,
                                                                     "bid":curr_bid,
                                                                     "in_watchlist": in_watchlist,
-                                                                    "owner":True})
+                                                                    "owner":is_owner})
             return render(request,"auctions/item.html",context = {"bid_form":bid_form,
                                                                     "bid":curr_bid,
                                                                     "in_watchlist": in_watchlist,
-                                                                    "owner":False})
+                                                                    "owner":is_owner})
     # if the user is not authenticated
     else:
         bid_form = BidForm()

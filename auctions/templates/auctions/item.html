@@ -60,9 +60,9 @@
 
                 <div class = "card-footer">
                     {% if user.is_authenticated %}
-                        <form action = "{% url 'item' bid.listing.pk %}" method="post"></form>
-                        {% if not owner %}
+                        <form action = "{% url 'item' bid.listing.pk %}" method="post">
                             {% csrf_token %}
+                        {% if not owner %}
                             <div class = "row">
                                 <div class = "col col-8 form-group mb-2">
                                     {{bid_form.bid_amount}}
@@ -72,15 +72,14 @@
                                 </div>
                             </div>
                         {% else %}
-                            {% csrf_token %}
                             <button class = "btn btn-danger" type = "submit" name = "close-bid-btn"> Close Bid </button>
                         {% endif %}
                         </form>
                     {% else %}
-                            <p>If you want to place a bid please 
-                            <a href="{% url 'login' %}"> Login </a>
-                            or <a href="{% url 'register' %}"> Register</a>
-                            </p>
+                        <p>If you want to place a bid please 
+                        <a href="{% url 'login' %}"> Login </a>
+                        or <a href="{% url 'register' %}"> Register</a>
+                        </p>
                     {% endif %}
                 </div>
             </div>
