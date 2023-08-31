@@ -5,6 +5,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from django import forms
 from django.db.models import Max
+from django.contrib import messages
 
 from .models import User, Listing, Bid, Watchlist
 
@@ -118,7 +119,7 @@ def create_listing(request):
             new_listing = form.save(commit = False)
             new_listing.user = User.objects.get(pk = request.user.pk)
             new_listing.save()
-            start_bid = Bid.objects.create(bidder = User.objects.get(pk = request.user.pk),
+            Bid.objects.create(bidder = User.objects.get(pk = request.user.pk),
                                            listing = new_listing,
                                            active =True,
                                            bid_amount = new_listing.price)
@@ -147,27 +148,24 @@ def listing_view(request,item):
                 bid_amount = bid_form.cleaned_data["bid_amount"]
                 if bid_amount > curr_bid.bid_amount:
                     # set the active field to false for previous bids.
-                    Bid.objects.filter(active = True).update(active = False)
+                    Bid.objects.filter(listing = lis, active = True).update(active = False)
                     # create a new bid instance.
-                    new_bid = Bid.objects.create(bidder = usr,
+                    Bid.objects.create(bidder = usr,
                                                  listing = lis,
                                                  bid_amount = bid_amount,
                                                  active = True)
                     bid_form = BidForm()
-                    message = "Bid Placed!"
-                    return render(request,"auctions/item.html",context = {"bid":new_bid,
-                                                                        "bid_form":bid_form,
-                                                                        "message":message,
-                                                                        "color":"#008000"})
-                else:
-                    message = "Bid must be bigger than current price!"
-                    return render(request,"auctions/item.html",context = {"bid":curr_bid,
-                                                                        "bid_form":bid_form,
-                                                                        "message":message,
-                                                                        "color":"#ff0000"})
+                    messages.success(request,"Bid Placed!")
+                    return HttpResponseRedirect(reverse("item",kwargs={"item":item}))
 
+                else:
+                    messages.warning(request, "Enter a larger price!")
+                    return HttpResponseRedirect(reverse("item",kwargs={"item":item}))
+
+            # if the form is not valid then render the page with the error of the form.
             return render(request,"auctions/item.html",context = {"bid":curr_bid,
-                                                            "bid_form":bid_form})
+                                                                  "bid_form":bid_form,
+                                                                  "in_watchlist": in_watchlist})
     
         elif request.method == "POST" and "watchlist-add-btn" in request.POST:
             if not in_watchlist:
@@ -188,9 +186,15 @@ def listing_view(request,item):
         # if the user is authenticated but no post request
         else:
             bid_form = BidForm()
+            if usr.pk == lis.user.pk:
+                return render(request,"auctions/item.html",context = {"bid_form":bid_form,
+                                                                    "bid":curr_bid,
+                                                                    "in_watchlist": in_watchlist,
+                                                                    "owner":True})
             return render(request,"auctions/item.html",context = {"bid_form":bid_form,
-                                                                  "bid":curr_bid,
-                                                                  "in_watchlist": in_watchlist})
+                                                                    "bid":curr_bid,
+                                                                    "in_watchlist": in_watchlist,
+                                                                    "owner":False})
     # if the user is not authenticated
     else:
         bid_form = BidForm()

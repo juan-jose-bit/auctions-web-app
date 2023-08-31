@@ -31,10 +31,12 @@
                             <form action = "{% url 'item' bid.listing.pk %}" method="post">
                                 {% csrf_token %}
                                 {% if request.user.is_authenticated %}
-                                    {% if not in_watchlist %}
-                                        <button class = "btn btn-secondary float-end" type ="submit" name = "watchlist-add-btn">Add to watchlist</button>
-                                    {% else %}
-                                        <button class = "btn btn-secondary float-end" type ="submit" name = "watchlist-del-btn">Remove from watchlist</button>
+                                    {% if not owner %}
+                                        {% if not in_watchlist %}
+                                            <button class = "btn btn-secondary float-end" type ="submit" name = "watchlist-add-btn">Add to watchlist</button>
+                                        {% else %}
+                                            <button class = "btn btn-secondary float-end" type ="submit" name = "watchlist-del-btn">Remove from watchlist</button>
+                                        {% endif %}
                                     {% endif %}
                                 {% endif %}
                             </form>
@@ -43,8 +45,14 @@
                 </div>
 
                 <div class = "card-body">
-                    {% if message %}
-                        <h6 style = "color:{{color}}" class="mb-2">{{message}}</h6>
+                    {% if messages %}
+                        <ul class = "messages">
+                            {% for message in messages %}
+                                <li class = "nobull">
+                                    <h6 {% if message.tags %} class="{{message.tags}}" {% endif %}>{{message}}</h6>
+                                </li>
+                            {% endfor %}
+                        </ul>
                     {% endif %}
                     <h4 id = "display-price-text" class = "display-4">${{bid.bid_amount}} USD</h4>
                     <h6 class="card-subtitle mb-2 text-muted">Current price</h6>

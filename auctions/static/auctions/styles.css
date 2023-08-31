@@ -4,14 +4,28 @@ body {
 }
 
 
-#img-container{
+#img-container {
     margin-bottom: 10%;
     border-radius: 2%;
     border-style: solid;
     border-width: thin;
 }
 
-#description{
+#description {
     margin-right: 1%;
 }
+
+
+.nobull {
+    list-style-type: none;
+}
+
+.warning {
+    color:red
+}
+
+.success {
+    color:green
+}
+
 
