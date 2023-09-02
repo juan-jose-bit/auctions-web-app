@@ -7,7 +7,7 @@ from django import forms
 from django.db.models import Max
 from django.contrib import messages
 
-from .models import User, Listing, Bid, Watchlist
+from .models import User, Listing, Bid, Watchlist, Winner, Comment
 
 ## form class for login of users
 class LoginForm(forms.Form):
@@ -18,7 +18,7 @@ class LoginForm(forms.Form):
                                                                  "placeholder":"password"}))
 
 
-## form class for register of users
+# form class for register of users
 class RegisterForm(forms.Form):
     username = forms.CharField(widget=forms.TextInput(attrs={'class': "form-control",
                                                              "placeholder":"username",
@@ -30,6 +30,7 @@ class RegisterForm(forms.Form):
     confirmation = forms.CharField(widget=forms.PasswordInput(attrs={'class': "form-control",
                                                                      "placeholder":"confirmation"}))
     
+# form to create a listing
 class ListingForm(forms.ModelForm):
 
     def __init__(self,*args,**kwargs):
@@ -42,10 +43,16 @@ class ListingForm(forms.ModelForm):
         model = Listing
         fields = ["title","description","price","photo","category"]
 
+# form used to bid on an item
 class BidForm(forms.Form):
     bid_amount = forms.FloatField(widget=forms.NumberInput(attrs={'class': "form-control", 
                                                         "placeholder":"Bid amount"}))
 
+# comments form
+class CommentForm(forms.Form):
+    text = forms.CharField(widget=forms.Textarea(attrs={'class': "form-control", 
+                                                        "placeholder":"What do you think?",
+                                                        "rows":"5"}))
 
 def index(request):
     listings = Listing.objects.annotate(max_price = Max("bids__bid_amount"))
@@ -135,13 +142,17 @@ def listing_view(request,item):
     
     # Retreave listing from db table
     lis = Listing.objects.get(pk = item)
-    # Retreave the current highest bid for the current listing
+    # get the current highest bid
     curr_bid = Bid.objects.filter(listing = lis, active = True).order_by('-bid_amount').first()
     if request.user.is_authenticated:
+        # user who made the request
         usr = User.objects.get(pk = request.user.pk)
+        # is the user who made the request the owner of the listing?
         is_owner = usr.pk == lis.user.pk
         # item is in the watchlist?
-        in_watchlist = Watchlist.objects.filter(user =usr,listing = lis)
+        in_watchlist = Watchlist.objects.filter(user = usr,listing = lis)
+        # is the user who made the request the winner of the bid?
+        win = Winner.objects.filter(listing = lis, user = usr).exists()
         if request.method == "POST" and "place-bid-btn" in request.POST:
             # check if the form is valid
             bid_form = BidForm(request.POST)    
@@ -152,10 +163,10 @@ def listing_view(request,item):
                     Bid.objects.filter(listing = lis, active = True).update(active = False)
                     # create a new bid instance.
                     Bid.objects.create(bidder = usr,
-                                                 listing = lis,
-                                                 bid_amount = bid_amount,
-                                                 active = True)
-                    bid_form = BidForm()
+                                       listing = lis,
+                                        bid_amount = bid_amount,
+                                        active = True)
+                    
                     messages.success(request,"Bid Placed!")
                     return HttpResponseRedirect(reverse("item",kwargs={"item":item}))
 
@@ -163,43 +174,67 @@ def listing_view(request,item):
                     messages.warning(request, "Enter a larger price!")
                     return HttpResponseRedirect(reverse("item",kwargs={"item":item}))
 
-            # if the form is not valid then render the page with the error of the form.
+            # if the form is not valid then render the page with the error of the form.(not done)
             return render(request,"auctions/item.html",context = {"bid":curr_bid,
                                                                   "bid_form":bid_form,
                                                                   "in_watchlist": in_watchlist})
-    
+
+        # if method is post and hit the add to watchlist btn then:
         elif request.method == "POST" and "watchlist-add-btn" in request.POST:
             if not in_watchlist:
+                # add the record to the wathclist table
                 Watchlist.objects.create(user = usr,listing = lis)
                 return HttpResponseRedirect(reverse("item",kwargs={"item":item}))
-            # return info that the item is already on the watchlist.
+            # return info that the item is already on the watchlist.(not done)
             else:
                 return HttpResponseRedirect(reverse("item",kwargs={"item":item}))
         
-        # todo: verify that the item is in the watchlist of the user
+        # if method is post and hit the del from watchlist btn then:
         elif request.method == "POST" and "watchlist-del-btn" in request.POST:
             if in_watchlist:
+                #delete record from watchlist table
                 Watchlist.objects.filter(user = usr,listing = lis).delete()
                 return HttpResponseRedirect(reverse("item",kwargs={"item":item}))
-            # return info that the item is not on the watchlist.
+            # return info that the item is not on the watchlist. (not done)
             else:
                 return HttpResponseRedirect(reverse("item",kwargs={"item":item}))
-        # if the user is authenticated but no post request
 
+        # if method is post and hit the close bid btn and the user who issued the request is
+        # the owner of the listing then:
         elif request.method == "POST" and "close-bid-btn" in request.POST and is_owner:
-            lis.active = False
-            lis.winner = curr_bid.bidder
+            if lis.active:
+                # set the listing as not active, and add the Winner to the winner table
+                lis.active = False
+                lis.save()
+                Winner.objects.create(listing = lis, user = curr_bid.bidder)
+                return HttpResponseRedirect(reverse("item",kwargs={"item":item}))
+            
+            # if the listing is already inactive then redirect with a message (not done)
+            return HttpResponseRedirect(reverse("item",kwargs={"item":item}))
+        
+        # if method is post and hit the place comment btn then:
+        elif request.method == "POST" and "comment-btn" in request.POST:
+            comment_form = CommentForm(request.POST)
+            if comment_form.is_valid():
+                comment_text = comment_form.cleaned_data["text"]
+                Comment.objects.create(listing = lis,text = comment_text, user = usr)
+                return HttpResponseRedirect(reverse("item",kwargs={"item":item}))
+            else:
+                return render(request,"auctions/item_not_found.html",context={"item":bid_form.errors})
+            
+        # this is for a GET request.
         else:
             bid_form = BidForm()
-            if is_owner:
-                return render(request,"auctions/item.html",context = {"bid_form":bid_form,
-                                                                    "bid":curr_bid,
-                                                                    "in_watchlist": in_watchlist,
-                                                                    "owner":is_owner})
+            comment_form = CommentForm()
+            comments = Comment.objects.filter(listing = lis)
             return render(request,"auctions/item.html",context = {"bid_form":bid_form,
                                                                     "bid":curr_bid,
                                                                     "in_watchlist": in_watchlist,
-                                                                    "owner":is_owner})
+                                                                    "owner":is_owner,
+                                                                    "active":lis.active,
+                                                                    "winner":win,
+                                                                    "comment_form":comment_form,
+                                                                    "comments":comments})
     # if the user is not authenticated
     else:
         bid_form = BidForm()
