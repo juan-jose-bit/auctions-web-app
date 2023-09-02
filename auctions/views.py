@@ -54,17 +54,17 @@ class CommentForm(forms.Form):
                                                         "placeholder":"What do you think?",
                                                         "rows":"5"}))
 
+#index view
 def index(request):
     listings = Listing.objects.annotate(max_price = Max("bids__bid_amount"))
     return render(request, "auctions/index.html",context={"listings":listings})
 
 
+#login view
 def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
-            # username = request.POST['username']
-            # password = request.POST['password']
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
             user = authenticate(request, username = username, password = password)
@@ -238,5 +238,5 @@ def listing_view(request,item):
     # if the user is not authenticated
     else:
         bid_form = BidForm()
-        return render(request,"auctions/item.html",context = {"bid_form":bid_form,"bid":curr_bid})
+        return render(request,"auctions/item.html",context = {"bid_form":bid_form,"bid":curr_bid,"active":lis.active})
     
