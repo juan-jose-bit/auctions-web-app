@@ -242,6 +242,5 @@ def listing_view(request,item):
     
 
 def watchlist_view(request,user):
-    pass
-    # usr = User.objects.get(pk = user)
-    # Watchlist.objects.filter(user = usr)
+    usr = User.objects.get(pk = user)
+    Watchlist.objects.filter(user = usr)
