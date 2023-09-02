@@ -26,7 +26,7 @@ class Bid(models.Model):
 class Watchlist(models.Model):
     id = models.AutoField(primary_key = True)
     user = models.ForeignKey(User, on_delete = models.CASCADE)
-    listing = models.OneToOneField(Listing, on_delete = models.CASCADE)
+    listing = models.ForeignKey(Listing, on_delete = models.CASCADE)
 
 class Comment(models.Model):
     id = models.AutoField(primary_key=True)

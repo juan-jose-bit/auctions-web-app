@@ -240,3 +240,8 @@ def listing_view(request,item):
         bid_form = BidForm()
         return render(request,"auctions/item.html",context = {"bid_form":bid_form,"bid":curr_bid,"active":lis.active})
     
+
+def watchlist_view(request,user):
+    pass
+    # usr = User.objects.get(pk = user)
+    # Watchlist.objects.filter(user = usr)
