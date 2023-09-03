@@ -243,4 +243,15 @@ def listing_view(request,item):
 
 def watchlist_view(request,user):
     usr = User.objects.get(pk = user)
-    Watchlist.objects.filter(user = usr)
+    lis_in_watchlist = Watchlist.objects.filter(user = usr).values("listing_id")
+    listings = Listing.objects.filter(pk__in = lis_in_watchlist).annotate(max_price = Max("bids__bid_amount"))
+    return render(request, "auctions/watchlist.html", context = {"watchlist":listings})
+
+def category_view(request):
+    categories = Listing.objects.values("category").distinct()
+    if len(request.GET.keys()) == 0:
+        cat = True
+        return render(request, "auctions/category.html", context = {"categories":categories,"cat":cat})
+    
+    lis = Listing.objects.filter(category = request.GET.get('cat')).annotate(max_price = Max("bids__bid_amount"))
+    return render(request, "auctions/category.html", context = {"listings":lis})

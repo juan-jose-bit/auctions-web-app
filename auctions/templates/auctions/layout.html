@@ -15,6 +15,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'index' %}">Active Listings</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'category' %}">Categories</a>
+                    </li>
                     {% if not user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'login' %}">Log In</a>
@@ -37,7 +40,7 @@
                                 <a class="nav-link" href = "{% url 'listing' %}">Create Listing</a>
                             </li>
                             <li class = "nav-item">
-                                <a class="nav-link" href = "#">Watchlist</a>
+                                <a class="nav-link" href = "{% url 'watchlist' request.user.pk %}">Watchlist</a>
                             </li>
                         </ul>
                     {% else %}
